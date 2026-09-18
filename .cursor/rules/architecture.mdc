@@ -1,0 +1,21 @@
+---
+description: Atlas OS architecture and domain conventions
+alwaysApply: true
+---
+
+Use a modular Next.js monolith. Keep domain logic in `src/domain` and `src/server`, not in React components.
+
+Required boundaries:
+
+- Auth/session validation in a server-only DAL
+- Atlas runtime (context assembly, model routing, tools, streaming)
+- Memory as structured records with provenance and invalidation
+- Capabilities as a registry that future Operatives can join
+
+Do not add LangChain, LangGraph, Mem0, Zep, Letta, a dedicated vector database, a graph database, or microservices.
+
+Every query for owner data must be scoped by the authenticated `userId`.
+
+AI providers are adapters. Atlas identity lives in constitution, context, memory, and tools.
+
+See `docs/ARCHITECTURE.md` and `docs/DATA-MODEL.md`.

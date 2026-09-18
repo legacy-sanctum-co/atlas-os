@@ -1,0 +1,19 @@
+---
+description: Atlas OS visual and interaction principles
+globs: src/**/*.{css,tsx,ts}
+alwaysApply: false
+---
+
+Design for a cinematic private command environment, not a SaaS dashboard.
+
+Palette: true obsidian, deep luxury gold, deep luxury purple. No neon, no cheap gradients, no gamer glow, no stock card grids.
+
+Atlas should feel present. Navigation supports intelligence; it does not dominate it.
+
+Use layout modes (`compact` / `command` / `expanded`) so fold-closed, fold-open, and desktop can become distinct experiences.
+
+Motion: transform and opacity only, purposeful, interruptible, reduced-motion safe. No Three.js or decorative WebGL.
+
+Do not use shadcn or default Tailwind component aesthetics. Tokens and CSS own the look.
+
+Empty states are honest. Do not populate the shell with placeholder intelligence.

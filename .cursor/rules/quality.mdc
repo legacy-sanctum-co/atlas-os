@@ -1,0 +1,18 @@
+---
+description: Atlas OS engineering quality bar
+alwaysApply: true
+---
+
+TypeScript strict. Avoid `any`. No unused-disable noise.
+
+Preserve buildability. After a milestone, run lint, typecheck, and build.
+
+Test domain logic: authz isolation, memory extract/update, retrieval ranking, model routing, and capability permissions.
+
+Do not leave secrets in client bundles or commit `.env.local`.
+
+Do not add dependencies for features that are not being implemented in the current task.
+
+Fix errors. Do not accumulate warnings as a backlog.
+
+If implementation diverges from `docs/`, update the docs in the same change.
