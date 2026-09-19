@@ -13,7 +13,7 @@ export function EnvironmentBadge() {
     .join(" · ");
   return (
     <span
-      className="text-data max-w-[calc(100%-0.75rem)] truncate rounded-sm border border-line-1 px-1 py-0.5 text-2xs leading-none text-ink-4"
+      className="text-data max-w-full truncate rounded-sm border border-line-1 px-1 py-0.5 text-2xs leading-none text-ink-4"
       title={detail ? `Fold: ${detail}` : "No fold data exposed by this browser"}
       data-testid="environment-mode"
     >

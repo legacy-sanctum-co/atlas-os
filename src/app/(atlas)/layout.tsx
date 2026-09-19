@@ -28,7 +28,7 @@ export default async function AtlasLayout({ children }: { children: ReactNode })
         <Rail>
           <NavLink href="/" label="Atlas" glyph="atlas" />
           <div className="mt-2 flex flex-col gap-1">{nav}</div>
-          <div className="mt-auto flex flex-col items-center gap-2">
+          <div className="mt-auto flex w-full flex-col items-center gap-2 px-1">
             <EnvironmentBadge />
             <SignOutButton />
           </div>
