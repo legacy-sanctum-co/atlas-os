@@ -29,9 +29,10 @@ Read these before making changes:
 3. **Separate concerns.** Domain logic lives in `src/modules/*/domain` and
    `src/modules/*/server`; UI lives in `src/modules/*/ui` and `src/design`.
    Infrastructure (db, ai, auth, jobs, observability) lives in `src/core`.
-4. **Model-agnostic AI.** All model access goes through `src/core/ai`
+4. **Provider-independent AI.** All model access goes through `src/core/ai`
    (`ModelRouter` roles like `atlas.primary`, `atlas.fast`, `atlas.embed`).
-   Never import a provider SDK from a module or UI file.
+   Never import a provider SDK, or name a vendor/model/embedding dimension,
+   outside `src/core/ai`. Providers are configuration, not architecture.
 5. **Capabilities, not hardcoded tools.** Every tool Atlas can call is
    registered through the capability registry in `src/modules/intelligence`.
    The same registry will host Operatives later.
@@ -43,6 +44,16 @@ Read these before making changes:
    boundary (env, request bodies, tool inputs, LLM structured output).
 8. **Buildable at every commit.** Run `pnpm typecheck && pnpm lint && pnpm test`
    before committing. Fix warnings; do not accumulate them.
+9. **Single owner, clean boundaries.** Phase 1 is a single-owner private
+   system. Keep `user_id` on every owned table; build no teams, invitations,
+   roles, organizations, or sharing.
+10. **No speculative infrastructure.** Deferred systems (brief, Operatives,
+    voice, integrations, gateway, Redis, durable jobs, WebGL) get a seam only
+    where it is free (a column, a port, a registry), never code paths or
+    dependencies.
+11. **Responsive foundation first.** Breakpoints, container queries, and
+    layout primitives make every layout correct everywhere; fold/hinge APIs
+    are guarded progressive enhancement inside `src/design/environment`.
 
 ## Stack (pinned; see `docs/adr/0001-stack.md`)
 

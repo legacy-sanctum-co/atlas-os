@@ -26,31 +26,41 @@ Model layout as three **named environment modes** rather than breakpoints:
 | `portable` | Two-pane portable command center (Fold open, tablets) |
 | `command` | Full operating environment (desktop) |
 
-Implementation:
+Implementation — **robust responsive foundation first, fold APIs as
+progressive enhancement only**:
 
-- `useEnvironmentMode()` in `src/design/environment` returns
-  `{ mode, segments, posture }`, resolved from (1) posture and segment media
-  queries / `window.viewport.segments` where available, (2) container size
-  of the shell, (3) width fallback (`<640 compact`, `640–1199 portable`,
-  `≥1200 command`). Server render uses the width fallback via CSS; the hook
-  refines on the client without layout flash.
-- The `Shell` component owns pane placement per mode. In dual-segment
-  layouts panes are sized with `env(viewport-segment-width …)` so no element
-  crosses the hinge. The composer lives in the bottom segment when segments
-  stack vertically.
-- Transitions between modes use `<ViewTransition>` with spatially coherent
-  motion (panes slide toward where they came from).
-- Playwright projects emulate: `fold-closed` (360×880, Android UA),
-  `fold-open` (840×880), `desktop` (1440×900). Physical-device validation is
-  an acceptance criterion.
+1. **Primary (always works):** CSS breakpoints define the mode.
+   `compact < 640px`, `portable 640–1199px`, `command ≥ 1200px`, expressed as
+   custom Tailwind variants (`compact:`, `portable:`, `command:`) and as
+   `data-env` on the shell root. Container queries (`@container`) adapt panes
+   and components to their own width so they are mode-agnostic where
+   possible. Layout primitives (`Shell`, `Pane`, `Rail`, `Dock`) encapsulate
+   placement; screens never hand-roll grid math.
+2. **Client refinement:** `useEnvironmentMode()` in `src/design/environment`
+   mirrors the same breakpoints via `matchMedia` for logic that must know the
+   mode (e.g., which pane hosts a sheet). Server render and first paint use
+   CSS only; there is no layout flash and no JS dependency for layout.
+3. **Enhancement (guarded, optional):** where `device-posture` and
+   `horizontal/vertical-viewport-segments` are supported, a
+   `@media (horizontal-viewport-segments: 2)` block sizes the two `portable`
+   panes with `env(viewport-segment-width …)` so nothing crosses the hinge,
+   and the hook exposes `{ posture, segments }` for non-critical polish
+   (e.g., docking the composer to the bottom segment). All fold behavior is
+   additive; removing it leaves a correct layout.
+4. Transitions between modes use `<ViewTransition>` with spatially coherent
+   motion.
+5. Playwright projects: `mobile-narrow` (360×800), `fold-cover` (376×880),
+   `fold-open` (840×880), `laptop` (1366×768), `desktop-wide` (1920×1080).
+   Physical Fold validation is an acceptance criterion but nothing critical
+   depends on hinge detection.
 
 ## Consequences
 
 - Every screen is designed three times, intentionally.
-- Progressive enhancement: full behavior on Chromium/Samsung Internet,
-  sensible fallback elsewhere.
-- Container queries (Tailwind 4 built-in) keep components mode-agnostic
-  where possible.
+- The UI is correct in every browser; Chromium/Samsung Internet users get
+  hinge-aware refinement.
+- No component may import fold APIs directly; only
+  `src/design/environment` touches them.
 
 ## Alternatives considered
 

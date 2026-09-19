@@ -66,9 +66,16 @@ No regulatory compliance (HIPAA, SOC 2, GDPR certification) is claimed.
   `tool_invocation`.
 - Prompts, memories, and message contents are never logged at info level.
   Telemetry to Langfuse is opt-in and self-hostable.
-- Provider data retention: prefer providers/settings with zero data
-  retention where available; document the chosen setting per provider in
-  `docs/adr`.
+- **Provider data retention (owner directive):** use the most
+  privacy-preserving, lowest-retention configuration each provider offers.
+  Concretely: opt out of training/data-sharing programs at the organization
+  level; request zero-data-retention where the provider grants it; never send
+  identifying metadata beyond a hashed user identifier; keep prompts out of
+  our own logs. The configured setting per provider is recorded in
+  `src/core/ai/models.ts` comments and reviewed whenever a provider changes.
+  Atlas OS may eventually hold business strategy, IP, financial context,
+  health information, and private conversations; design every provider
+  boundary as if it already does.
 
 ### HTTP hardening
 
@@ -88,8 +95,11 @@ No regulatory compliance (HIPAA, SOC 2, GDPR certification) is claimed.
 
 ### Repository hygiene
 
-- Repo must be **private** (it is currently public — see Risks).
-- Dependabot/Renovate for dependency updates; `pnpm audit` in CI.
+- Repo must be **private**. Until it is, nothing beyond `.env.example`
+  (keys without values) and synthetic test data may be committed.
+- Never commit secrets or production personal data. `.env*` is gitignored;
+  CI uses repository secrets; a secret-scanning check runs in CI.
+- Dependabot for dependency updates; `pnpm audit` in CI.
 - No real personal data in fixtures or tests.
 
 ## Phase 2+ — planned

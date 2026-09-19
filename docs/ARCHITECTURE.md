@@ -123,10 +123,12 @@ Key properties:
 | `atlas.primary` | Conversation, reasoning, tool use | Anthropic Claude (current Sonnet-class) | Best fit for candid, structured reasoning; swap freely |
 | `atlas.fast` | Titles, classification, cheap steps | OpenAI small model or Anthropic Haiku-class | Latency/cost |
 | `atlas.extract` | Structured memory extraction (Zod output) | Same family as primary, smaller tier | Determinism over creativity |
-| `atlas.embed` | Embeddings (1536-dim) | OpenAI `text-embedding-3-small` | Dimension is pinned in schema; changing it requires a re-embed migration |
+| `atlas.embed` | Embeddings | OpenAI `text-embedding-3-small` (1536-dim) | Provider, model, version, and dimension are recorded in the `embedding_model` registry; changing them is config + backfill (ADR 0009) |
 
-Vercel AI Gateway is supported by the same code (string model ids) and can be
-enabled later for failover/BYOK; it is not required in Phase 1.
+These are infrastructure configuration. Atlas is provider-independent by
+construction: no module, prompt, schema, or UI references a vendor. A
+gateway could later be adopted through the same router; it is a confirmed
+Phase 1 deferral and not a dependency.
 
 ## 6. Memory architecture
 
@@ -143,7 +145,10 @@ ADD-only extraction, hybrid retrieval):
 Rules: ADD-only with supersession, provenance on every row, candidate →
 active via owner review, hybrid retrieval (pgvector HNSW cosine + Postgres
 `tsvector`), recency/importance weighting, extraction as an idempotent
-background job. Forgetting policy (confidence decay, archival) is Phase 2.
+background job. The `memory` row is canonical; embeddings are derived
+representations stored per embedding space (`embedding_model` registry +
+`memory_embedding`, ADR 0009). Forgetting policy (confidence decay,
+archival) is Phase 2.
 
 ## 7. Data platform
 

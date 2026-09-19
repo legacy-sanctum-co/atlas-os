@@ -66,8 +66,8 @@ rendering on the Fold and a calibrated desktop display.
 
   --radius-xs: 2px;  --radius-sm: 4px;  --radius-md: 8px;  --radius-lg: 12px;
 
-  --font-display: "Instrument Serif", ui-serif, serif;      /* or a geometric display sans; decide in Milestone 3 */
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;     /* primary OS/interface face */
+  --font-display: var(--font-sans);   /* selective display moments; may point to a restrained premium face later */
   --font-mono: "Geist Mono", ui-monospace, monospace;
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -98,9 +98,21 @@ fills and strokes.
 
 ## 4. Typography
 
-- Display: headings, section titles, key numerals. Tight tracking.
-- Sans: body, UI. Sizes on a 1.2 modular scale from 13px.
-- Mono: ids, timestamps, data, tool inputs/outputs.
+Direction (approved): **Swiss precision × advanced intelligence × luxury
+engineering.** Atlas is an operating environment; readability and
+information density come first.
+
+- **Primary — premium geometric/humanist sans** (Geist Sans, self-hosted).
+  Used for the entire interface: body, controls, data labels, headings.
+  Sizes on a 1.2 modular scale from 13px; tight but legible tracking on
+  headings.
+- **Display — selective only.** A restrained premium display face may be
+  introduced later for Atlas identity moments, major environment headings,
+  cinematic transitions, and a few high-level titles. It is never used for
+  body, navigation, controls, or data. Until chosen, `--font-display`
+  aliases the primary sans with heavier weight and tighter tracking. The
+  application must not become an editorial, serif-heavy luxury site.
+- **Mono** (Geist Mono): ids, timestamps, data, tool inputs/outputs.
 - `font-variant-numeric: tabular-nums` everywhere numbers align.
 - Uppercase micro-labels (11px, +8% tracking, `text-muted`) for section
   headers, the way a dial labels its complications.
@@ -131,20 +143,24 @@ Three intentionally designed modes rather than accidental breakpoints.
 | `portable` | Fold open (~ 700–840 px, near-square), tablets | Two panes. Left: conversation. Right: context rail (focus, memories used, projects). On a dual-segment viewport, panes map exactly to segments so nothing crosses the hinge. |
 | `command` | Desktop ≥ 1200 px | Three regions: left navigation rail (collapsible), center Atlas, right context rail. Secondary environments (Ventures, Memory) open as focused views in center with Atlas docked. |
 
-Detection (`src/design/environment/use-environment-mode.ts`):
+Foundation first, fold APIs as enhancement (ADR 0008):
 
-1. `@media (device-posture: folded)` and `(horizontal-viewport-segments: 2)`
-   / `(vertical-viewport-segments: 2)` when supported (Chromium; Samsung
-   Internet 29+ for posture).
-2. `window.viewport.segments` for exact pane sizing via
-   `env(viewport-segment-width 0 0)` etc.
-3. Container queries on the shell for pane-level adaptation.
-4. Width fallback: `< 640 → compact`, `640–1199 → portable`, `≥ 1200 → command`.
+1. **Breakpoints define the mode** (always work, no JS): `< 640 → compact`,
+   `640–1199 → portable`, `≥ 1200 → command`, exposed as Tailwind variants
+   `compact:` / `portable:` / `command:` and `data-env` on the shell root.
+2. **Container queries** adapt panes and components to their own width.
+3. **Layout primitives** (`Shell`, `Pane`, `Rail`, `Dock`) own placement.
+4. **Client hook** `useEnvironmentMode()` mirrors the breakpoints for logic
+   that needs the mode.
+5. **Enhancement, guarded:** `@media (horizontal-viewport-segments: 2)` and
+   `device-posture` refine `portable` so panes align to segments and nothing
+   crosses the hinge; `window.viewport?.segments` is read defensively for
+   polish only. Removing all fold code leaves a correct layout.
 
-Fold-specific constraints: never place a control or text across the hinge
-gap; the composer sits in the segment where the keyboard rises (bottom
-segment when `vertical-viewport-segments: 2`); respect `safe-area-inset-*`.
-Test with Chrome DevTools dual-screen emulation and on the physical device.
+Fold-specific polish: never place a control or text across the hinge gap;
+the composer sits in the segment where the keyboard rises; respect
+`safe-area-inset-*`. Verify at 360, 376, 840, 1366, and 1920 px, in Chrome
+DevTools dual-screen emulation, and on the physical device.
 
 ## 7. Components (Phase 1 primitives)
 

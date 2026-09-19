@@ -26,9 +26,12 @@ Full reference: `docs/DESIGN-SYSTEM.md`.
 
 ## Typography
 
-One display face for headings/numerals, one text face for body, one mono for
-data. Numerals use tabular figures. Typography carries hierarchy before color
-does.
+Primary face is a premium geometric/humanist sans (Geist Sans) for the whole
+interface: Swiss precision, readability, information density. A restrained
+display face may be used only for Atlas identity moments, major environment
+headings, and a few high-level titles; never for body, navigation, controls,
+or data. Do not make the app an editorial serif-heavy site. Mono for data.
+Numerals use tabular figures. Typography carries hierarchy before color does.
 
 ## Motion
 
@@ -48,10 +51,13 @@ Three intentional modes, exposed via `useEnvironmentMode()` and CSS:
 - `portable` — Fold open / tablets: two-pane command center.
 - `command`  — desktop: full operating environment.
 
-Detection order: `device-posture` + viewport segments (Chromium) → container
-queries → width fallback. Layout must never span the hinge: use
-`env(viewport-segment-*)` when `horizontal-viewport-segments: 2`. Every
-screen must be tested in all three modes.
+Foundation first: breakpoints (`compact:` / `portable:` / `command:`
+variants, `data-env` on the shell), container queries, and layout primitives
+(`Shell`, `Pane`, `Rail`, `Dock`) define layout and must work everywhere with
+no JS. Fold APIs (`device-posture`, viewport segments) are guarded
+progressive enhancement used only inside `src/design/environment`; removing
+them must leave a correct layout. Nothing critical depends on hinge
+detection. Verify at 360, 376, 840, 1366, 1920 px.
 
 ## Accessibility and performance
 

@@ -13,4 +13,5 @@ supersede with a new ADR and link both ways.
 | 0005 | Better Auth with closed registration and passkeys | Accepted |
 | 0006 | Capability registry as the single extension seam | Accepted |
 | 0007 | Background work behind a JobRunner port; defer durable engine | Accepted |
-| 0008 | Environment modes for foldable-first responsive design | Accepted |
+| 0008 | Environment modes: responsive foundation first, fold APIs as progressive enhancement | Accepted (amended 2026-09-19) |
+| 0009 | Embedding spaces are versioned infrastructure, not domain | Accepted |

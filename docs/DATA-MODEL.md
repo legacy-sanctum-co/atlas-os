@@ -10,9 +10,13 @@ user ─┬─< session / account / verification / passkey        (Better Auth)
       ├── user_profile                                       (core memory block)
       ├─< venture ─< project
       ├─< conversation ─< message ─< tool_invocation
-      ├─< memory  (provenance → message, optional project)
+      ├─< memory ─< memory_embedding ─> embedding_model     (memory is canonical; embeddings are derived)
       └─< atlas_event                                        (audit / event spine)
 ```
+
+Phase 1 is a **single-owner private system**. `user_id` appears on every owned
+table so multi-user is possible later, but no team, organization, invitation,
+or sharing concepts exist and none should be added speculatively.
 
 ## Auth (owned by Better Auth, generated via `npx auth generate`)
 
@@ -108,8 +112,7 @@ Index: `(conversation_id, created_at)`.
 | `id` | uuid PK | |
 | `user_id` | uuid FK | |
 | `kind` | enum | `fact | preference | decision | goal | commitment | context | insight` |
-| `content` | text | One clear statement |
-| `embedding` | vector(1536) | HNSW `vector_cosine_ops` index |
+| `content` | text | One clear statement. **Canonical.** |
 | `search` | tsvector generated | `to_tsvector('english', content)`; GIN index |
 | `importance` | smallint | 1–5, set by extractor or owner |
 | `confidence` | real | 0–1; `user_explicit` = 1 |
@@ -126,6 +129,55 @@ Index: `(conversation_id, created_at)`.
 
 Rules: ADD-only. Contradiction → new row with `supersedes_id`, old row set
 `superseded`. Only `active` rows are retrieved. Deleting is `rejected`.
+
+## `embedding_model` — memory module (infrastructure registry)
+
+Embedding provider, model, version, and dimensionality are infrastructure
+facts, not domain assumptions. This table records every embedding space the
+system has used.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | text PK | Stable slug, e.g. `openai:text-embedding-3-small:1536` |
+| `provider` | text | `openai`, `anthropic`, `voyage`, `local`, … |
+| `model` | text | Provider model name |
+| `model_version` | text nullable | Provider version/date when exposed |
+| `dimensions` | integer | Vector length |
+| `status` | enum | `active | retiring | retired` — exactly one `active` |
+| `created_at`, `retired_at` | | |
+
+## `memory_embedding` — memory module (derived)
+
+A retrieval representation of a memory in one embedding space. A memory may
+have several rows (one per space) during a migration.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `memory_id` | uuid FK → memory | cascade on delete |
+| `embedding_model_id` | text FK → embedding_model | |
+| `embedding` | vector(N) | N is fixed per table because HNSW indexes require declared dimensions; see migration strategy |
+| `content_hash` | text | SHA-256 of the embedded text; skip re-embedding when unchanged |
+| `created_at` | | |
+
+PK `(memory_id, embedding_model_id)`. HNSW index on `embedding` with
+`vector_cosine_ops`, partial on the active model id.
+
+### Changing the embedding model (realistic migration path)
+
+1. Insert a new `embedding_model` row with `status='retiring'` for the old
+   one and `status='active'` for the new one.
+2. If dimensions change, a migration creates `memory_embedding_<dims>` (same
+   shape, different `vector(N)`) and the repository selects the table by the
+   active model's dimensions. If dimensions are equal, the same table is
+   reused with the new `embedding_model_id`.
+3. A backfill job embeds all `active` memories into the new space in
+   batches, keyed on `content_hash` for idempotency.
+4. Retrieval reads only the active space; when backfill coverage is 100%,
+   the old rows/table are dropped and the old model set `retired`.
+
+`src/core/ai/embeddings.ts` exposes `getActiveEmbeddingModel()` and
+`embed(text)`; nothing outside `src/core/ai` and the memory repository knows
+the dimension.
 
 ## `tool_invocation` — intelligence module
 
@@ -172,4 +224,5 @@ before the data does.
 
 `artifact` (documents/files), `memory_entity` / `memory_edge` (graph),
 `integration` + `integration_grant`, `operative` + `operative_run`,
-`brief`, `notification`, `health_*`, `workspace`.
+`brief`, `notification`, `health_*`, `workspace`. None of these are created
+speculatively; they are listed only so Phase 1 names do not collide.

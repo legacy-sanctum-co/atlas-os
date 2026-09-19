@@ -24,10 +24,15 @@ Build a thin, owned memory layer on Postgres:
   become `active` only when the owner accepts them in a review queue.
   Explicit `remember` calls (approved tool) become `active` immediately with
   `confidence = 1`.
-- **Retrieval**: hybrid — pgvector cosine over `embedding` (HNSW) fused with
-  Postgres full-text over `search` (tsvector, GIN), weighted by recency,
-  importance, and confidence. Fusion is a pure function with unit tests.
-  Top-k capped and rendered into context with ids for citation.
+- **Retrieval**: hybrid — pgvector cosine over `memory_embedding` (HNSW)
+  fused with Postgres full-text over `memory.search` (tsvector, GIN),
+  weighted by recency, importance, and confidence. Fusion is a pure function
+  with unit tests. Top-k capped and rendered into context with ids for
+  citation.
+- **Canonical record vs. representation**: the `memory` row is canonical.
+  Embeddings live in `memory_embedding`, keyed by `embedding_model` (provider,
+  model, version, dimensions). Changing embedding models is a registry change
+  plus a backfill, not a domain change (ADR 0009).
 - **Extraction**: after each assistant turn, a job runs `atlas.extract` with
   a Zod output schema producing candidates with `kind`, `importance`,
   `entities`. Idempotent per message via `message.memory_extracted_at`.
@@ -41,7 +46,8 @@ Build a thin, owned memory layer on Postgres:
   memories that do not exist.
 - Adding a knowledge graph later starts from `memory.entities` JSONB and
   dedicated edge tables; no rewrite.
-- Embedding model changes require a re-embed migration.
+- Embedding model changes are a registry entry + backfill job (ADR 0009);
+  the domain never learns the dimension.
 
 ## Alternatives considered
 

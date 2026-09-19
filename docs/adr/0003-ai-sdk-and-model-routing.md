@@ -28,7 +28,13 @@ export const MODEL_ROLES = {
 ```
 
   Exact model ids are configuration and will be set at implementation time
-  from current provider catalogs; the roles are the contract.
+  from current provider catalogs; the roles are the contract. **Atlas is
+  provider-independent by construction**: Anthropic as the initial
+  `atlas.primary` and OpenAI for fast/extract/embed are infrastructure
+  configuration, not architecture. No module, prompt, schema, or UI may
+  reference a vendor or model name; provider-specific options are confined
+  to `src/core/ai`. Benchmarking or swapping a model is a change to one
+  config object.
 - Modules request `router.resolve('atlas.primary')`; they never import
   provider packages.
 - Personality lives in `src/modules/intelligence/domain/atlas-instructions.ts`
@@ -43,11 +49,15 @@ export const MODEL_ROLES = {
 
 - Swapping vendors is a one-file change; tests use a mock language model
   from `ai/test`.
-- Vercel AI Gateway can be adopted by switching role values to string ids
-  (`'anthropic/claude-…'`) and setting `AI_GATEWAY_API_KEY`; no code change
-  elsewhere.
-- The embedding dimension (1536) is pinned in the schema; changing embedding
-  models requires a re-embed migration (documented in DATA-MODEL).
+- A gateway could later be adopted by switching role values to string ids;
+  no code change elsewhere. AI Gateway is a **confirmed deferral** and is not
+  a dependency, env var, or code path in Phase 1.
+- Embedding provider, model, version, and dimension are recorded in the
+  `embedding_model` registry and isolated in `src/core/ai/embeddings.ts`
+  (ADR 0009).
+- Privacy: provider clients are configured with the lowest-retention options
+  each provider offers (zero-data-retention / no-training settings where
+  available); the configuration is documented in `docs/SECURITY.md`.
 
 ## Alternatives considered
 

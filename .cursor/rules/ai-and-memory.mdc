@@ -11,7 +11,9 @@ alwaysApply: false
 - Roles, not models: `atlas.primary` (reasoning/conversation), `atlas.fast`
   (titles, classification, cheap steps), `atlas.extract` (structured memory
   extraction), `atlas.embed` (embeddings). Mapping lives in
-  `src/core/ai/models.ts`. Swapping a vendor is a one-file change.
+  `src/core/ai/models.ts`. Swapping a vendor is a one-file change. Atlas is
+  provider-independent: no vendor or model name appears outside `src/core/ai`.
+  Provider clients use the lowest-retention settings available.
 - Use AI SDK 7 APIs: `streamText`/`generateText` with `instructions`,
   `stopWhen: isStepCount(n)`, `toolApproval`, `timeout`, `onEnd`, `telemetry`.
   UI uses `useChat` with `DefaultChatTransport` and renders `message.parts`.
@@ -36,6 +38,10 @@ so the model can reference provenance.
   `provenance_message_id`. Extracted memories start as `candidate` and are
   shown in a review queue; the owner confirms or rejects. Only `active`
   memories are retrieved.
+- The `memory` row is canonical. Embeddings are derived and live in
+  `memory_embedding` keyed by `embedding_model` (provider, model, version,
+  dimensions). Only `src/core/ai/embeddings.ts` knows the provider or
+  dimension; never hardcode `1536` or a model name elsewhere (ADR 0009).
 - Retrieval is hybrid: pgvector cosine (HNSW) + Postgres full-text, fused
   with recency and importance weighting. Implement ranking as a pure,
   unit-tested function.

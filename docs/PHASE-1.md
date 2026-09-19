@@ -25,7 +25,15 @@ fake.
 | 11 | Design system foundation | Tokens, primitives, motion vocabulary, shell |
 | 12 | Production-quality repo | Strict TS, lint, unit + E2E tests, CI, ADRs, env validation, deploy to Vercel + Neon |
 | 13 | Observability & security baseline | OTel + optional Langfuse, redacting logger, CSP/headers, crypto helper, audit events |
-| 14 | Progressive onboarding v0 | First-run: name, timezone, identity summary, communication prefs; Atlas asks for missing profile pieces naturally over time (max one prompt per session) |
+| 14 | Progressive onboarding (small, not a gate) | First run captures only: who you are, primary objectives, your ventures/major projects, how Atlas should interact with you. Each step skippable except a name. The owner enters the real environment within a minute; Atlas keeps learning through use (at most one gentle profile prompt per session) |
+
+Phase 1 is a **single-owner private system**. Ownership boundaries (`user_id`)
+are clean so multi-user is possible later, but no teams, invitations, roles,
+organizations, shared workspaces, or collaboration UX are built.
+
+Approved by the owner on 2026-09-19 with modifications recorded in ADRs
+0003, 0008, 0009 and `docs/DESIGN-SYSTEM.md` (typography, responsive
+strategy).
 
 ## 2. Explicitly not in Phase 1
 
@@ -40,17 +48,23 @@ fake.
 | Resumable streams / Redis | Not needed for a single owner yet | `conversation.active_stream_id` |
 | Durable job engine | One short post-turn job suffices | `JobRunner` port |
 | Document/artifact storage | Not required for conversation + memory | `artifact` table reserved |
-| Multi-user / teams | Single owner | `user_id` everywhere |
-| WebGL / 3D | Not justified; depth via layering and motion | none needed |
-| Model gateway / failover | Direct providers are simpler; gateway is a config switch | string model ids already compatible |
+| Multi-user / teams / collaboration | Single owner | `user_id` everywhere |
+| WebGL / Three.js | Not justified; depth via layering and motion | none needed |
+| AI Gateway dependency | Direct providers are simpler; not a dependency, env var, or code path in Phase 1 | `ModelRouter` roles |
+
+Seams are preserved where they cost nothing (a `user_id` column, a port
+interface, a registry). No speculative infrastructure is built for deferred
+systems.
 
 ## 3. User journey (Phase 1)
 
 1. **Enter.** Owner opens Atlas OS on desktop or Fold. Obsidian shell loads;
    sign-in with passkey (or password on first device).
-2. **First run.** Atlas asks four things conversationally: what to call you,
-   timezone, "who are you in two sentences," and how you want Atlas to talk
-   to you. Stored in `user_profile`. Nothing else is required.
+2. **First run (under a minute).** Atlas asks, conversationally and
+   skippably: what to call you, who you are in two sentences, your primary
+   objectives, your ventures/major projects, and how you want Atlas to talk
+   to you. Stored in `user_profile`/`venture`/`project`. Only the name is
+   required; everything else can arrive later through normal use.
 3. **Home / Command.** The composer is centered. Atlas indicator idle. Right
    rail shows: current focus (none yet), "What Atlas knows" (the profile
    block; no memories yet, stated plainly), active projects (empty state that
@@ -136,16 +150,17 @@ Dev: `typescript@6.0`, `eslint@10`, `typescript-eslint`, `eslint-plugin-jsx-a11y
 `@testing-library/react`, `@testing-library/dom`, `@testing-library/user-event`,
 `@playwright/test`, `vite-tsconfig-paths`.
 
-Optional (env-gated): `@langfuse/vercel-ai-sdk`, `@langfuse/otel`,
-`@sentry/nextjs`.
+Optional, only when the owner enables it (not installed by default):
+`@langfuse/vercel-ai-sdk`, `@langfuse/otel`, `@sentry/nextjs`.
 
-Not installed in Phase 1: Inngest/Workflow, Redis, resumable-stream, mem0,
-LangChain/LangGraph, three.js, shadcn generator.
+Not installed in Phase 1: `@ai-sdk/gateway`, Inngest/Workflow, Redis,
+resumable-stream, mem0, LangChain/LangGraph, three.js, shadcn generator.
 
 ## 9. Implementation sequence
 
 Each milestone ends green (`typecheck`, `lint`, `test`, `build`) and is
-validated in the running app.
+validated in the running app. **Milestones are executed sequentially with an
+owner review after M1** before the Atlas intelligence experience (M3+) begins.
 
 - [ ] **M0 — Repository foundation**
   - pnpm, Next.js 16 App Router (TypeScript, Tailwind 4, `src/`), TS 6.0 strict
@@ -184,7 +199,8 @@ validated in the running app.
     `tool_invocation` audit.
   - Tests: registry policy, tool schemas, approval E2E.
 - [ ] **M5 — Memory**
-  - `memory` schema with vector + tsvector; embeddings via `atlas.embed`;
+  - `memory` (tsvector) + `embedding_model` registry + `memory_embedding`
+    (ADR 0009); embeddings via `atlas.embed` through `core/ai/embeddings`;
     hybrid ranking (pure, tested); `memory.recall`/`remember`/`supersede`
     tools; extraction job (`atlas.extract`, Zod output, idempotent via
     `memory_extracted_at`) through `JobRunner` (`after()` adapter); review
