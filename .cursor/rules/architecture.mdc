@@ -1,0 +1,68 @@
+---
+description: Atlas OS architecture conventions — module boundaries, layering, AI abstraction, data access
+globs: ["src/**/*.ts", "src/**/*.tsx", "drizzle/**"]
+alwaysApply: false
+---
+
+# Architecture conventions
+
+Atlas OS is a modular monolith: one Next.js 16 App Router application with
+strict internal boundaries. No microservices. See `docs/ARCHITECTURE.md`.
+
+## Layout
+
+```
+src/app/            routes only: thin, compose modules, no business logic
+src/core/           infrastructure: env, db, auth, ai, crypto, events, jobs, observability
+src/modules/<name>/ domain (pure), server (data + use cases), ui (components)
+src/design/         design system: tokens, primitives, shell, motion
+```
+
+Modules in Phase 1: `identity`, `conversations`, `memory`, `ventures`,
+`intelligence`.
+
+## Dependency rules
+
+- `app` → `modules`, `design`, `core`
+- `modules/*/ui` → own `domain`, `design`, other modules' public `index.ts` only
+- `modules/*/server` → own `domain`, `core`, other modules' public `index.ts`
+- `modules/*/domain` → nothing except `zod` and shared types (pure, testable)
+- `core` → never imports from `modules` or `app`
+- Provider SDKs (`@ai-sdk/*`, `better-auth`, `postgres`) are imported only in
+  `src/core`.
+
+## AI
+
+- All model access goes through `src/core/ai/model-router.ts` using roles
+  (`atlas.primary`, `atlas.fast`, `atlas.embed`, `atlas.extract`). Roles map
+  to provider models in one config file. Modules never name a vendor model.
+- Atlas orchestration uses AI SDK 7 (`streamText` / `ToolLoopAgent`,
+  `instructions`, `isStepCount`, `toolApproval`, `onEnd`). Tools are defined
+  with `tool({ inputSchema })` and registered through the capability registry
+  in `src/modules/intelligence/server/capabilities`.
+- Context assembly (profile, memories, active ventures/projects, conversation
+  history) is a pure function in `src/modules/intelligence/domain` that
+  returns a typed `AtlasContext`; the prompt builder renders it.
+- Memory writes happen after the response via `after()` (Phase 1) behind the
+  `JobRunner` port in `src/core/jobs` so a durable engine can replace it.
+
+## Data
+
+- Drizzle schema per module in `src/modules/<name>/server/schema.ts`,
+  aggregated in `src/core/db/schema.ts`. Migrations in `drizzle/` are
+  generated, reviewed, and committed. Enable extensions (`vector`) in a
+  hand-written first migration.
+- Every user-owned table has `user_id` and every query filters by the
+  authenticated user id. There is no shared/global data in Phase 1.
+- Store `UIMessage.parts` as JSONB; convert with `convertToModelMessages`
+  at call time. Never store provider-specific message formats.
+- Emit an `atlas_event` row for significant domain events (conversation
+  created, memory created/superseded, project status changed, tool executed).
+  This is the audit spine and the future trigger surface for Operatives.
+
+## Server entry points
+
+- Every page, route handler, and server action calls `requireSession()` from
+  `src/core/auth/server.ts`. `proxy.ts` only does optimistic cookie checks.
+- Validate all inputs with Zod. Return typed errors; never leak stack traces.
+- Route handlers for streaming live under `src/app/api/atlas/*`.

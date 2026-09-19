@@ -1,0 +1,62 @@
+---
+description: Atlas intelligence, memory, tools and provider abstraction rules
+globs: ["src/core/ai/**", "src/modules/intelligence/**", "src/modules/memory/**", "src/app/api/atlas/**"]
+alwaysApply: false
+---
+
+# AI, memory and tools
+
+## Provider abstraction
+
+- Roles, not models: `atlas.primary` (reasoning/conversation), `atlas.fast`
+  (titles, classification, cheap steps), `atlas.extract` (structured memory
+  extraction), `atlas.embed` (embeddings). Mapping lives in
+  `src/core/ai/models.ts`. Swapping a vendor is a one-file change.
+- Use AI SDK 7 APIs: `streamText`/`generateText` with `instructions`,
+  `stopWhen: isStepCount(n)`, `toolApproval`, `timeout`, `onEnd`, `telemetry`.
+  UI uses `useChat` with `DefaultChatTransport` and renders `message.parts`.
+- Register telemetry once in `instrumentation.ts` (`@ai-sdk/otel`, optional
+  Langfuse). Every call sets `telemetry.functionId`.
+- Never log prompts or memories at info level. Redact in error paths.
+
+## Context assembly
+
+`assembleAtlasContext()` is pure and returns:
+profile (core block) → active ventures/projects → retrieved memories (ranked)
+→ recent conversation window → current message. Keep the always-in-context
+core block under ~1k tokens. Retrieved memories are capped and cite their ids
+so the model can reference provenance.
+
+## Memory
+
+- Memory rows are ADD-only with `status` (`active | superseded | rejected`)
+  and `supersedes_id`. Never hard-delete; supersede. Contradictions produce a
+  new row that supersedes the old.
+- Every memory records `source` (`user_explicit | extracted | tool`) and
+  `provenance_message_id`. Extracted memories start as `candidate` and are
+  shown in a review queue; the owner confirms or rejects. Only `active`
+  memories are retrieved.
+- Retrieval is hybrid: pgvector cosine (HNSW) + Postgres full-text, fused
+  with recency and importance weighting. Implement ranking as a pure,
+  unit-tested function.
+- Extraction runs after the turn completes via the `JobRunner` port, using
+  `atlas.extract` with a Zod output schema. It must be idempotent per message.
+
+## Tools and capabilities
+
+- Every tool is a `Capability` with `id`, `description`, `inputSchema`,
+  `riskLevel` (`read | write | external`), `execute`, and `requiresApproval`.
+  `write`/`external` capabilities default to `toolApproval: 'user-approval'`.
+- Tools receive authenticated context via `toolsContext` and never trust
+  model-supplied user or workspace ids.
+- Record each execution in `tool_invocation` and emit an `atlas_event`.
+- The registry is the single seam for future Operatives: an Operative is a
+  capability whose `execute` delegates to a sub-agent. Do not add another
+  routing mechanism.
+
+## Voice readiness
+
+The composer is a command surface that accepts text now and audio later. Do
+not couple conversation state to text input widgets. Voice will use OpenAI
+Realtime over WebRTC with server-minted ephemeral tokens
+(`/api/voice/session`); the API key never reaches the browser.

@@ -1,0 +1,45 @@
+---
+description: Atlas OS product philosophy — what Atlas is, how it behaves, what we never fake
+alwaysApply: true
+---
+
+# Product philosophy
+
+Atlas OS is a private Personal Intelligence Operating System. Atlas is the
+central executive intelligence: `OWNER → ATLAS → everything else`.
+
+## Atlas' voice and role
+
+Atlas is highly intelligent, calm, tactical, sophisticated, confident, candid,
+concise by default, deeply analytical when the question warrants it, proactive
+without nagging, and willing to challenge weak ideas. Atlas is
+solution-oriented, not agreeable. These are traits of one intelligence, not a
+set of chatbot personas. The system prompt lives in
+`src/modules/intelligence/domain/atlas-instructions.ts`; keep personality there,
+never scattered across the codebase.
+
+## Interaction model
+
+Favor `command → intelligence → context → action`. Navigation exists to
+support the intelligence layer, not to dominate it. Every environment should
+keep the Atlas composer reachable.
+
+## Never fake functionality
+
+- No placeholder memories, metrics, operatives, insights, or briefings.
+- If data is not connected, do not render a widget for it.
+- Future capabilities are either omitted or labelled `Future` explicitly.
+- The app must always be real software, never a high-fidelity mockup.
+
+## Intelligence over lists
+
+Atlas' value is connecting dots ("twelve open items, only three affect this
+week's objectives"). When building surfaces that summarize state, design for
+synthesis and prioritization, not for raw enumeration.
+
+## Extension model
+
+Atlas sits above a future workforce of specialized Operatives. Do not build
+Operatives now, but never make a decision that would prevent them: every
+capability is registered through the capability registry, and orchestration
+stays in the intelligence module.

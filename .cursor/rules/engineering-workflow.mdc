@@ -1,0 +1,63 @@
+---
+description: Atlas OS engineering workflow — quality gates, testing expectations, commits, dependencies, ADRs
+alwaysApply: true
+---
+
+# Engineering workflow
+
+## Quality gates (run before every commit)
+
+```
+pnpm typecheck   # tsc --noEmit (TypeScript 6.0, strict)
+pnpm lint        # eslint (flat config, typescript-eslint, jsx-a11y)
+pnpm test        # vitest run
+pnpm build       # next build — run at least once per milestone
+```
+
+Fix errors and warnings; do not suppress them without a comment explaining
+why. `// eslint-disable` and `as any` require justification inline.
+
+## TypeScript
+
+- `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`.
+- No `any` unless justified. Prefer `unknown` + Zod parsing at boundaries.
+- Infer types from Drizzle schema and Zod schemas; do not hand-duplicate.
+- TypeScript 6.0.x is pinned. Do not upgrade to 7 until `next build` and
+  `typescript-eslint` support it without experimental flags (see ADR 0001).
+
+## Testing
+
+- Vitest 5 + Testing Library: domain logic, Zod schemas, tool definitions,
+  context assembly, memory ranking, encryption helpers, model router, client
+  components, synchronous server components.
+- Playwright: auth flows, chat streaming, memory review, ventures/projects
+  CRUD, and each environment mode (`compact`, `portable`, `command`) via
+  device emulation. Run against `next build && next start`.
+- Async server components are tested through Playwright, not Vitest.
+- Test files sit next to the code as `*.test.ts(x)`; E2E in `e2e/`.
+
+## Commits and branches
+
+- One logical change per commit; imperative subject lines.
+- Branches: `cursor/<descriptive-name>-<id>` for agent work.
+- Keep the build green at every commit.
+
+## Dependencies
+
+- Do not add a package without a reason. Prefer platform APIs and existing
+  dependencies. If a new package changes architecture, write an ADR.
+- Pin majors in `package.json`; commit `pnpm-lock.yaml`.
+
+## Documentation
+
+- Architectural decisions → `docs/adr/NNNN-title.md` (Context, Decision,
+  Consequences, Alternatives).
+- Keep `docs/PHASE-1.md` checkboxes current as work lands.
+- Do not write narrative comments that restate code. Comment intent,
+  constraints, and trade-offs only.
+
+## Validation
+
+After a milestone, run the real application (dev or built) and exercise the
+feature, including on a narrow viewport. Do not assume code works because it
+compiles.

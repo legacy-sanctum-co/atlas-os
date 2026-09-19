@@ -1,0 +1,65 @@
+---
+description: Atlas OS design system — visual language, tokens, motion, responsive environment modes, accessibility
+globs: ["src/design/**", "src/modules/**/ui/**", "src/app/**/*.tsx", "src/app/**/*.css"]
+alwaysApply: false
+---
+
+# Design system
+
+Target: luxury Swiss watch × futuristic command center × elite performance
+laboratory × personal AI intelligence. "2075 sophistication", not decoration.
+Full reference: `docs/DESIGN-SYSTEM.md`.
+
+## Palette and tokens
+
+- Base is true obsidian black. Gold is authority/primary action. Purple is
+  intelligence state (Atlas thinking, streaming, memory activity). Purple is
+  an accent, never a wash. No neon, no cheap gradients.
+- All tokens are Tailwind 4 `@theme` variables in
+  `src/design/tokens/theme.css` (OKLCH). Components consume tokens; never
+  hardcode colors, radii, shadows, or durations.
+- Surfaces are layered by elevation tokens (`--surface-0..4`) with restrained
+  translucency. Avoid stacks of rounded cards; use spatial layering, hairline
+  dividers, and typographic hierarchy.
+- Radii are small (`--radius-xs..md`); large pills only for controls that are
+  literally toggles or chips.
+
+## Typography
+
+One display face for headings/numerals, one text face for body, one mono for
+data. Numerals use tabular figures. Typography carries hierarchy before color
+does.
+
+## Motion
+
+- Motion communicates system state (Atlas listening, thinking, streaming,
+  committing to memory, environment transitions). If an animation does not
+  encode state or spatial relationship, remove it.
+- Use `motion/react` for component motion and React 19.3 `<ViewTransition>`
+  for route/environment transitions. Durations and easings come from tokens.
+- Animate `transform` and `opacity` only. Never animate layout properties in
+  loops. Respect `prefers-reduced-motion` in every animation.
+
+## Responsive environment modes
+
+Three intentional modes, exposed via `useEnvironmentMode()` and CSS:
+
+- `compact`  — Galaxy Fold closed / phones: command bar, brief, conversation.
+- `portable` — Fold open / tablets: two-pane command center.
+- `command`  — desktop: full operating environment.
+
+Detection order: `device-posture` + viewport segments (Chromium) → container
+queries → width fallback. Layout must never span the hinge: use
+`env(viewport-segment-*)` when `horizontal-viewport-segments: 2`. Every
+screen must be tested in all three modes.
+
+## Accessibility and performance
+
+- Keyboard reachable, visible focus (gold ring), semantic landmarks, ARIA
+  only where semantics are missing. Use Base UI/Radix primitives for dialogs,
+  menus, and popovers rather than hand-rolling focus management.
+- Contrast ≥ 4.5:1 for text on obsidian. Verify gold and purple text tokens.
+- No WebGL/3D in Phase 1. Cinematic depth comes from layering, lighting
+  gradients on surfaces, and motion.
+- Budget: LCP < 2.5s on mid-range Android over 4G, no long tasks > 50ms
+  during streaming.

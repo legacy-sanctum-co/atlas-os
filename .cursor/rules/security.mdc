@@ -1,0 +1,40 @@
+---
+description: Atlas OS security and privacy rules — auth, secrets, encryption, data isolation
+globs: ["src/core/auth/**", "src/core/crypto/**", "src/core/env.ts", "src/app/api/**", "proxy.ts", "src/modules/**/server/**"]
+alwaysApply: false
+---
+
+# Security and privacy
+
+Atlas OS will hold deeply private information. Treat every server boundary as
+hostile input. Full baseline: `docs/SECURITY.md`.
+
+- **Authentication**: Better Auth with database sessions. Registration is
+  closed by default (`ALLOWED_OWNER_EMAILS` allowlist). Passkeys are the
+  preferred second factor. Sessions rotate; cookies are `HttpOnly`, `Secure`,
+  `SameSite=Lax`.
+- **Authorization**: `requireSession()` in every page, route handler, and
+  server action. `proxy.ts` is optimistic only. Every query filters by the
+  authenticated `user_id`; no query touches user-owned tables without it.
+- **Secrets**: validated once in `src/core/env.ts` (`@t3-oss/env-nextjs`).
+  Only `NEXT_PUBLIC_*` reaches the client. Never log env values. `.env*` is
+  gitignored; `.env.example` documents keys without values.
+- **Encryption**: `src/core/crypto` provides AES-256-GCM with a versioned
+  key (`ATLAS_DATA_KEY_V1`), random 12-byte nonce per value, AAD bound to
+  table + row id, and a HMAC blind index helper for exact-match lookups.
+  Health, financial, and any field marked `sensitive` in the data model use
+  it. Keys never live in the database or the repo.
+- **Transport/DB**: TLS to Postgres (`sslmode=require`). Least-privilege DB
+  role for the app; migrations use a separate role.
+- **AI boundary**: tool inputs are Zod-validated; tools take user identity
+  from server context, never from model output. Write/external tools require
+  approval. Prompt content is not logged at info level.
+- **Headers**: strict CSP (nonce-based), `frame-ancestors 'none'`, HSTS,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy` limiting microphone to same-origin (voice later).
+- **Audit**: security-relevant actions (sign-in, passkey add, memory
+  supersede, tool execution, export) emit `atlas_event` rows.
+- **No compliance claims** (HIPAA, SOC 2, etc.) anywhere in UI or docs
+  unless implemented and validated.
+- **Repository**: this repo must be private. Do not commit fixtures with
+  real personal data.
