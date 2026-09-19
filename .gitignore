@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# build / test artifacts
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# environment — never commit real values
+.env
+.env.*
+!.env.example
+
+# local databases / volumes
+*.db
+*.sqlite
+.postgres-data/
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# vercel
+.vercel/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
