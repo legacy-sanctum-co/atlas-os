@@ -1,0 +1,110 @@
+/*
+ * Atlas OS design tokens (docs/DESIGN-SYSTEM.md).
+ * Single source of truth; Tailwind utilities are generated from @theme.
+ * Palette: true obsidian black, deep masculine gold, deep masculine purple.
+ * Direction: luxury Swiss watch × command center × performance lab × private AI.
+ */
+
+@theme {
+  /* ---------- Color: obsidian scale (surfaces) ---------- */
+  --color-obsidian-0: oklch(0.09 0.008 285); /* page void */
+  --color-obsidian-1: oklch(0.12 0.01 285); /* base surface */
+  --color-obsidian-2: oklch(0.155 0.012 285); /* raised panel */
+  --color-obsidian-3: oklch(0.19 0.014 285); /* elevated / hover */
+  --color-obsidian-4: oklch(0.23 0.016 285); /* active / borders strong */
+
+  /* ---------- Color: text ---------- */
+  --color-ink-1: oklch(0.96 0.01 90); /* primary text */
+  --color-ink-2: oklch(0.78 0.012 90); /* secondary */
+  --color-ink-3: oklch(0.58 0.012 90); /* tertiary / meta */
+  --color-ink-4: oklch(0.42 0.012 90); /* disabled / hairline labels */
+
+  /* ---------- Color: gold (primary accent, restrained) ---------- */
+  --color-gold-1: oklch(0.86 0.1 85); /* highlight edge */
+  --color-gold-2: oklch(0.76 0.12 82); /* accent text / icons */
+  --color-gold-3: oklch(0.64 0.12 78); /* primary control */
+  --color-gold-4: oklch(0.5 0.1 74); /* pressed / deep */
+  --color-gold-5: oklch(0.32 0.06 72); /* tint on surfaces */
+
+  /* ---------- Color: purple (intelligence / Atlas presence) ---------- */
+  --color-violet-1: oklch(0.8 0.1 300);
+  --color-violet-2: oklch(0.66 0.14 298);
+  --color-violet-3: oklch(0.52 0.16 296);
+  --color-violet-4: oklch(0.38 0.14 294);
+  --color-violet-5: oklch(0.24 0.08 292);
+
+  /* ---------- Color: semantic ---------- */
+  --color-signal-positive: oklch(0.74 0.14 150);
+  --color-signal-caution: oklch(0.78 0.14 75);
+  --color-signal-critical: oklch(0.64 0.18 25);
+  --color-signal-info: var(--color-violet-2);
+
+  /* ---------- Color: lines ---------- */
+  --color-line-1: oklch(1 0 0 / 0.06); /* hairline */
+  --color-line-2: oklch(1 0 0 / 0.1); /* border */
+  --color-line-3: oklch(1 0 0 / 0.16); /* strong border / focus base */
+  --color-line-gold: oklch(0.76 0.12 82 / 0.35);
+
+  /* ---------- Typography ---------- */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  --text-2xs: 0.6875rem; /* 11 */
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem; /* 12 */
+  --text-xs--line-height: 1.1rem;
+  --text-sm: 0.8125rem; /* 13 — base UI size */
+  --text-sm--line-height: 1.3rem;
+  --text-base: 0.9375rem; /* 15 — reading */
+  --text-base--line-height: 1.55rem;
+  --text-lg: 1.125rem; /* 18 */
+  --text-lg--line-height: 1.6rem;
+  --text-xl: 1.375rem; /* 22 */
+  --text-xl--line-height: 1.8rem;
+  --text-2xl: 1.75rem; /* 28 */
+  --text-2xl--line-height: 2.1rem;
+  --text-3xl: 2.25rem; /* 36 */
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 3rem; /* 48 */
+  --text-4xl--line-height: 3.2rem;
+
+  --tracking-display: -0.02em;
+  --tracking-label: 0.08em;
+
+  /* ---------- Radius ---------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ---------- Depth / elevation (shadow + inner light) ---------- */
+  --shadow-e1: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 1px 2px oklch(0 0 0 / 0.5);
+  --shadow-e2: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 4px 12px oklch(0 0 0 / 0.5);
+  --shadow-e3: 0 1px 0 oklch(1 0 0 / 0.06) inset, 0 12px 32px oklch(0 0 0 / 0.55);
+  --shadow-e4: 0 1px 0 oklch(1 0 0 / 0.07) inset, 0 24px 64px oklch(0 0 0 / 0.6);
+  --shadow-focus: 0 0 0 2px var(--color-obsidian-0), 0 0 0 4px var(--color-gold-2);
+  --shadow-glow-gold: 0 0 24px oklch(0.76 0.12 82 / 0.18);
+  --shadow-glow-violet: 0 0 32px oklch(0.66 0.14 298 / 0.22);
+
+  /* ---------- Motion ---------- */
+  --ease-precise: cubic-bezier(0.2, 0, 0, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+  --duration-cinematic: 640ms;
+
+  /* ---------- Environment breakpoints (ADR 0008) ---------- */
+  --breakpoint-portable: 40rem; /* 640px: compact → portable */
+  --breakpoint-command: 75rem; /* 1200px: portable → command */
+
+  /* ---------- Layout ---------- */
+  --spacing-rail: 4.5rem; /* command rail width */
+  --spacing-dock: 3.5rem; /* compact bottom dock height */
+  --spacing-pane-min: 20rem;
+  --spacing-reading: 44rem; /* max reading measure */
+}

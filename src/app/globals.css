@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@import "../design/tokens.css";
+@import "../design/environment/environment.css";
+
+@custom-variant compact (@media (width < 40rem));
+@custom-variant portable (@media (40rem <= width < 75rem));
+@custom-variant command (@media (width >= 75rem));
+
+/* Interaction states are opt-in variants so components stay declarative. */
+@custom-variant hocus (&:hover, &:focus-visible);
+@custom-variant pressed (&:active, &[data-pressed]);
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    height: 100%;
+    background: var(--color-obsidian-0);
+    color: var(--color-ink-1);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-feature-settings: "cv11", "ss01", "tnum";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100%;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    overscroll-behavior: none;
+  }
+
+  *:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background: var(--color-gold-5);
+    color: var(--color-ink-1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Material: surfaces are layered, never flat. */
+  .material-base {
+    background: var(--color-obsidian-1);
+  }
+  .material-panel {
+    background: var(--color-obsidian-2);
+    border: 1px solid var(--color-line-1);
+    box-shadow: var(--shadow-e1);
+  }
+  .material-raised {
+    background: var(--color-obsidian-3);
+    border: 1px solid var(--color-line-2);
+    box-shadow: var(--shadow-e2);
+  }
+  .material-glass {
+    background: oklch(0.155 0.012 285 / 0.72);
+    border: 1px solid var(--color-line-2);
+    box-shadow: var(--shadow-e2);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+  }
+  .material-instrument {
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 0.03), transparent 40%), var(--color-obsidian-2);
+    border: 1px solid var(--color-line-2);
+    box-shadow: var(--shadow-e2);
+  }
+
+  .text-display {
+    font-family: var(--font-display);
+    letter-spacing: var(--tracking-display);
+    font-weight: 500;
+  }
+  .text-label {
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+    font-weight: 500;
+  }
+  .text-data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hairline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-line-gold), transparent);
+  }
+}

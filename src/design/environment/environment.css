@@ -1,0 +1,109 @@
+/*
+ * Environment modes (ADR 0008). Breakpoints are the foundation; fold
+ * enhancements are additive and guarded. Removing every @media block below
+ * that mentions viewport-segments leaves a correct layout.
+ *
+ * Shell grid areas: rail | main | side, with a dock in compact.
+ */
+
+.atlas-shell {
+  --env: "compact";
+  display: grid;
+  min-height: 100dvh;
+  min-height: 100svh;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--spacing-dock);
+  grid-template-areas:
+    "main"
+    "dock";
+  padding-bottom: env(safe-area-inset-bottom);
+  container-type: inline-size;
+  container-name: shell;
+}
+
+.atlas-shell > [data-slot="rail"] {
+  display: none;
+}
+.atlas-shell > [data-slot="side"] {
+  display: none;
+}
+.atlas-shell > [data-slot="dock"] {
+  grid-area: dock;
+}
+.atlas-shell > [data-slot="main"] {
+  grid-area: main;
+  min-width: 0;
+  container-type: inline-size;
+  container-name: main;
+}
+
+/* ---------- PORTABLE: unfolded Fold / tablet ---------- */
+@media (width >= 40rem) {
+  .atlas-shell {
+    --env: "portable";
+    grid-template-columns: var(--spacing-rail) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "rail main";
+    padding-bottom: 0;
+  }
+  .atlas-shell > [data-slot="rail"] {
+    display: flex;
+    grid-area: rail;
+  }
+  .atlas-shell > [data-slot="dock"] {
+    display: none;
+  }
+  .atlas-shell[data-has-side="true"] {
+    grid-template-columns: var(--spacing-rail) minmax(0, 1fr) minmax(var(--spacing-pane-min), 0.8fr);
+    grid-template-areas: "rail main side";
+  }
+  .atlas-shell[data-has-side="true"] > [data-slot="side"] {
+    display: block;
+    grid-area: side;
+    min-width: 0;
+    border-left: 1px solid var(--color-line-1);
+    container-type: inline-size;
+    container-name: side;
+  }
+}
+
+/* ---------- COMMAND: desktop ---------- */
+@media (width >= 75rem) {
+  .atlas-shell {
+    --env: "command";
+    grid-template-columns: var(--spacing-rail) minmax(0, 1fr);
+  }
+  .atlas-shell[data-has-side="true"] {
+    grid-template-columns: var(--spacing-rail) minmax(0, 1.4fr) minmax(24rem, 1fr);
+  }
+}
+
+/* ---------- Fold enhancement: two horizontal segments (book posture) ----------
+ * Only applies when the browser exposes viewport segments. Panes snap to the
+ * segment edges so no content crosses the hinge. */
+@media (horizontal-viewport-segments: 2) and (width >= 40rem) {
+  .atlas-shell[data-has-side="true"] {
+    grid-template-columns:
+      var(--spacing-rail)
+      calc(env(viewport-segment-right 0 0) - var(--spacing-rail))
+      calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0))
+      minmax(0, 1fr);
+    grid-template-areas: "rail main hinge side";
+  }
+  .atlas-shell[data-has-side="true"]::after {
+    content: "";
+    grid-area: hinge;
+    pointer-events: none;
+  }
+  .atlas-shell[data-has-side="true"] > [data-slot="side"] {
+    border-left: none;
+  }
+}
+
+/* ---------- Fold enhancement: two vertical segments (laptop posture) ---------- */
+@media (vertical-viewport-segments: 2) {
+  .atlas-shell > [data-slot="main"] {
+    /* Keep the composer in the lower segment where the keyboard rises. */
+    padding-bottom: calc(env(viewport-segment-top 0 1) - env(viewport-segment-bottom 0 0));
+  }
+}
