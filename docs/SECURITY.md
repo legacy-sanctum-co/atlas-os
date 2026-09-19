@@ -10,14 +10,21 @@ No regulatory compliance (HIPAA, SOC 2, GDPR certification) is claimed.
 
 - Better Auth 1.7 with database sessions (not stateless JWT), Drizzle
   adapter.
-- Registration closed: only emails in `ALLOWED_OWNER_EMAILS` may sign up.
-  Everyone else receives a generic failure.
-- Email + password (argon2/scrypt via Better Auth defaults) plus passkeys
-  (`@better-auth/passkey`). Passkey enrollment prompted on first sign-in.
-- Session cookies: `HttpOnly`, `Secure`, `SameSite=Lax`, rotated on
-  privilege change; 7-day expiry with sliding refresh; cookie cache signed.
-- Rate limiting on auth endpoints (Better Auth built-in) and on
-  `/api/atlas/*` (per-user token bucket, in-memory now, Redis later).
+- Registration closed (`src/core/auth/access-policy.ts`, unit-tested): sign-up
+  succeeds only for an email in `ALLOWED_OWNER_EMAILS` **and** while no user
+  exists. Once the owner exists the system is sealed for everyone (403
+  `REGISTRATION_CLOSED`); each denial is recorded in `atlas_event`.
+- Email + password (scrypt via Better Auth default, 12-char minimum) plus
+  passkeys (`@better-auth/passkey`, `residentKey: preferred`,
+  `userVerification: preferred`), managed at `/security`.
+- Session cookies: prefix `atlas.`, `HttpOnly`, `SameSite=Lax`, `Secure`
+  whenever the base URL is https; 14-day expiry with 1-day rolling refresh;
+  cookie cache disabled so every request is validated against the database
+  and sign-out revokes immediately (verified: session row deleted).
+- Rate limiting (Better Auth built-in): 30 req/min per IP on auth routes,
+  5/min on `/sign-in/email`, 3/min on `/sign-up/email`.
+- Better Auth telemetry disabled; Next.js telemetry disabled.
+- Ids are UUIDv7 generated in the application.
 
 ### Authorization
 
@@ -52,10 +59,12 @@ No regulatory compliance (HIPAA, SOC 2, GDPR certification) is claimed.
 
 ### Database
 
-- App connects with a role limited to DML on application tables; migrations
-  run with a separate role via `drizzle-kit migrate` in CI/CD.
-- Neon branch per preview deployment; production data never copied to
-  previews (schema-only branches).
+- Migrations are SQL files under `drizzle/` applied by `pnpm db:migrate`
+  (`drizzle-orm` migrator); `drizzle-kit push` is never used. CI applies
+  them to a fresh `pgvector/pgvector:pg17` and runs `drizzle-kit check`.
+- Every owned table carries `user_id` with `ON DELETE CASCADE` to `user`.
+- Planned (owner action, not yet in place): split DML role vs. migration
+  role on Neon; Neon branch per preview deployment with schema-only data.
 
 ### AI boundary
 
@@ -79,19 +88,35 @@ No regulatory compliance (HIPAA, SOC 2, GDPR certification) is claimed.
 
 ### HTTP hardening
 
-- CSP with per-request nonce (`script-src 'nonce-…' 'strict-dynamic'`),
-  `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`.
-- HSTS (preload after first month), `X-Content-Type-Options: nosniff`,
-  `Referrer-Policy: strict-origin-when-cross-origin`,
-  `Permissions-Policy: microphone=(self), camera=(), geolocation=()`.
-- No third-party scripts in Phase 1.
+- CSP built per request in `src/proxy.ts` via `src/core/security/csp.ts`
+  (unit-tested): `script-src 'self' 'nonce-…' 'strict-dynamic'`,
+  `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`,
+  `form-action 'self'`, `connect-src 'self'`, `upgrade-insecure-requests` in
+  production. Development adds only `'unsafe-eval'` and `ws:` for Fast
+  Refresh. `style-src` keeps `'unsafe-inline'` (Next injects style tags);
+  this is the known trade-off.
+- Static headers in `next.config.ts`: HSTS (2 years, includeSubDomains;
+  preload once stable), `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy: camera=(), geolocation=(), microphone=(self),
+  payment=(), usb=()`, `X-DNS-Prefetch-Control: off`, `x-powered-by` removed.
+- No third-party scripts, fonts, or origins; Geist is self-hosted.
 
 ### Auditability
 
-- `atlas_event` records: sign-in/out, passkey add/remove, memory
-  create/activate/supersede/reject, project status changes, tool executions
-  and approvals, data exports.
-- Retained indefinitely; owner-visible in a later "Activity" view.
+- `atlas_event` (append-only) records today: `system.bootstrap.completed`,
+  `profile.created`/`updated`, `auth.sign_up.denied`. Vocabulary for
+  sign-in/out, passkeys, memory lifecycle, projects, and capabilities is
+  defined in `src/modules/events/domain/event.ts` and wired as those flows land.
+- Payloads are redacted (never prompts, content, or secrets). Retained
+  indefinitely; owner-visible in a later "Activity" view.
+
+### Logging
+
+- `src/core/observability/logger.ts` emits JSON lines and redacts by key
+  (password, secret, token, api key, authorization, cookie, prompt,
+  instructions, content, parts, memory, embedding, email) at any depth.
+  `console.*` is lint-banned outside the logger sink.
 
 ### Repository hygiene
 

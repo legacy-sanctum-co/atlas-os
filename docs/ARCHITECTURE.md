@@ -40,7 +40,14 @@ Operatives, voice, and integrations can be added without rewriting the core.
 | Routes | `src/app` | modules, design, core | Compose modules into screens and API routes. No business logic. |
 | Design | `src/design` | core/env (client-safe only) | Tokens, primitives, shell, motion, environment-mode hooks. |
 | Modules | `src/modules/<name>` | own domain, core, other modules' `index.ts` | Vertical domain slices. |
-| Core | `src/core` | third-party only | Infrastructure ports and adapters. Never imports modules. |
+| Core | `src/core` | third-party only | Infrastructure ports and adapters. Never imports modules, with two named composition roots: `core/db/schema.ts` (aggregates module schemas for drizzle-kit) and `core/auth/server.ts` (auth lifecycle → `events`, `identity` bootstrap). |
+
+Enforced by ESLint `no-restricted-imports` in `eslint.config.mjs`:
+core → modules/app is an error; infrastructure SDKs (`postgres`, `better-auth`,
+`@better-auth/*`, `@ai-sdk/*`, drizzle drivers) may only be imported inside
+`src/core`; other modules are imported only via `@/modules/<name>`
+(server-safe) or `@/modules/<name>/domain` (client-safe). Module `server/schema.ts`
+files may import other modules' schemas for foreign keys.
 
 Each module has three folders:
 
@@ -56,11 +63,13 @@ A module exposes a single `index.ts`. Cross-module imports go through it.
 
 | Module | Owns | Key surfaces |
 | --- | --- | --- |
-| `identity` | Better Auth wiring, `user_profile` (core memory block), preferences, onboarding state | Sign-in, passkeys, profile, progressive onboarding prompts |
-| `conversations` | `conversation`, `message`, stream lifecycle, titles | Atlas conversation view, history list |
-| `memory` | `memory`, extraction, retrieval/ranking, review queue | "What Atlas knows" panel, candidate review |
+| `identity` | `user_profile` (core memory block), preferences, onboarding state, owner bootstrap | Profile, progressive onboarding prompts (auth screens live in `app/`, wiring in `core/auth`) |
+| `conversation` | `conversation`, `message`, stream lifecycle, titles | Atlas conversation view, history list |
+| `memory` | `memory`, `embedding_model`, `memory_embedding_*`, extraction, retrieval/ranking, review queue | "What Atlas knows" panel, candidate review |
 | `ventures` | `venture` (company/brand), `project`, status/priority | Context registry, project detail |
-| `intelligence` | Atlas instructions, context assembly, capability registry, orchestration, `tool_invocation` | `/api/atlas/chat` route handler, tool UI parts |
+| `events` | `atlas_event` append-only spine, `recordEvent()` | Audit views (later) |
+| `capabilities` | `Capability` contract, `CapabilityRegistry`, `tool_invocation` | Tool UI parts (M4) |
+| `intelligence` (M3) | Atlas instructions, context assembly, orchestration | `/api/atlas/chat` route handler |
 
 Future modules slot in beside them without touching the core:
 `operatives`, `performance`, `studio`, `command` (daily brief),
@@ -75,7 +84,7 @@ Future modules slot in beside them without touching the core:
 | `auth` | Better Auth instance, `requireSession()`, allowlist | Email+password, passkeys, DB sessions |
 | `ai` | `ModelRouter` (roles → models), embeddings, telemetry registration | `@ai-sdk/anthropic`, `@ai-sdk/openai`; gateway optional |
 | `crypto` | AES-256-GCM field encryption, blind index, key versions | Node `crypto`, env-held key |
-| `events` | `emitAtlasEvent()` writes `atlas_event`; in-process subscribers | Postgres table; later: durable bus |
+| `security` | CSP builder | Nonce + `strict-dynamic`; static headers in `next.config.ts` |
 | `jobs` | `JobRunner` port: `enqueue(job)` | `after()` adapter now; Inngest/Workflow adapter later |
 | `observability` | OpenTelemetry setup, logger with redaction | `instrumentation.ts`, `@ai-sdk/otel`, optional Langfuse |
 

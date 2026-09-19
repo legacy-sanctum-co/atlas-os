@@ -162,27 +162,35 @@ Each milestone ends green (`typecheck`, `lint`, `test`, `build`) and is
 validated in the running app. **Milestones are executed sequentially with an
 owner review after M1** before the Atlas intelligence experience (M3+) begins.
 
-- [ ] **M0 — Repository foundation**
-  - pnpm, Next.js 16 App Router (TypeScript, Tailwind 4, `src/`), TS 6.0 strict
-    flags, ESLint flat config, Prettier, `.editorconfig`, `.nvmrc` (22),
-    `.env.example`, `src/core/env.ts`, CI (GitHub Actions: install,
-    typecheck, lint, test, build), Vercel project, Neon project, Docker
-    compose for local `pgvector/pgvector:pg17`.
-  - Folder skeleton per `docs/ARCHITECTURE.md` with `index.ts` barrels.
-  - ADRs 0001–0006 committed. Make repo private.
-- [ ] **M1 — Data and auth**
-  - Drizzle client, first migration enabling `vector`, Better Auth tables
-    via generator, `user_profile`, `atlas_event`, `emitAtlasEvent()`.
-  - Better Auth config: allowlist, passkeys, sessions; `/api/auth/[...all]`;
-    `requireSession()`; `proxy.ts` optimistic redirect.
-  - Sign-in/sign-up/passkey enrollment screens (unstyled-but-tokenized).
-  - Vitest: env schema, allowlist logic, repository isolation. Playwright:
-    sign-in, blocked sign-up.
+- [x] **M0 — Repository foundation** (done 2026-09-19)
+  - pnpm 10, Next.js 16.3 App Router (`src/`), TypeScript 6.0 with strict +
+    `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`, ESLint 9 flat
+    config with module-boundary rules, Prettier, `.editorconfig`, `.nvmrc`,
+    `.env.example`, `src/core/env.ts` (t3-env + Zod), Vitest 5 projects
+    (unit/dom/db), Playwright (five viewports), GitHub Actions CI with a
+    pgvector service, Dependabot, secret scan.
+  - Observability interfaces: structured redacting logger, `withSpan`,
+    `instrumentation.ts` registering OpenTelemetry (no exporter by default).
+  - Vercel/Neon projects are owner actions and remain pending.
+- [x] **M1 — Data and auth** (done 2026-09-19)
+  - Drizzle 0.45 client + `drizzle/0000_enable_pgvector.sql` +
+    `0001_foundation.sql` covering auth tables, `user_profile`, `venture`,
+    `project`, `conversation`, `message`, `memory`, `embedding_model`,
+    `memory_embedding_1536`, `tool_invocation`, `atlas_event`.
+  - Better Auth 1.7: allowlist + owner-exists sealing in `user.create.before`,
+    passkey plugin, DB sessions (14d / 1d rolling), rate limits,
+    `atlas.*` HttpOnly cookies, UUIDv7 ids, telemetry off; `requireSession()`;
+    `proxy.ts` nonce CSP + optimistic redirect.
+  - `FieldEncryption` (AES-256-GCM, AAD, versioned keys, HKDF blind index).
+  - Design tokens (`src/design/tokens.css`), materials, primitives
+    (`Shell`/`Pane`/`Rail`/`Dock`, `Button`, `Field`/`Input`, `AtlasMark`),
+    environment CSS with guarded fold enhancements, `useEnvironment()`.
+  - Screens: `/sign-in` (bootstrap or sign-in), `/` (foundation status),
+    `/security` (passkeys). 41 Vitest tests, 22 Playwright tests green.
 - [ ] **M2 — Design system core**
-  - Tokens, fonts, primitives, `Shell` with three environment modes,
-    `useEnvironmentMode()` (posture/segments/container/width), `AtlasIndicator`
-    state machine, motion tokens, reduced motion. Dev-only `/design` route.
-  - Playwright screenshots in compact/portable/command emulation.
+  - Remaining: `AtlasIndicator` state machine, motion primitives in use,
+    `<ViewTransition>` between modes, side-pane behaviors, dev-only
+    `/design` route, screenshot baselines. Tokens/primitives already exist.
 - [ ] **M3 — Conversations and streaming**
   - `conversation`/`message` schema and repositories; `ModelRouter`;
     `atlas-instructions.ts`; `assembleAtlasContext()` v0 (profile + window);
